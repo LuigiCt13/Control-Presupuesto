@@ -13,53 +13,71 @@
     </script>
     <!-- Chart.js para gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Suavizar apertura de paneles colapsables */
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+    </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 font-sans text-gray-800 dark:text-gray-100 p-4 md:p-8 transition-colors duration-200">
+<body class="bg-gray-100 dark:bg-gray-900 font-sans text-gray-800 dark:text-gray-100 p-3 sm:p-4 md:p-8 transition-colors duration-200">
 
     <div class="max-w-6xl mx-auto">
         
-        <!-- Encabezado con Botón de Modo Oscuro -->
-        <div class="mb-8 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md flex flex-col md:flex-row justify-between items-center gap-4 transition-colors">
-            <div class="text-center md:text-left">
-                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Mi Control de Presupuesto Multi-Moneda</h1>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Registra tus gastos, controla tus compras en cuotas y programa tus vencimientos.</p>
+        <!-- Encabezado con Respaldo JSON y Modo Oscuro -->
+        <div class="mb-6 bg-white dark:bg-gray-800 p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col lg:flex-row justify-between items-center gap-4 transition-colors">
+            <div class="text-center lg:text-left">
+                <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">Mi Control de Presupuesto</h1>
+                <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-1">Multi-moneda • Compras en cuotas • Presupuestos y vencimientos</p>
             </div>
-            <button onclick="toggleDarkMode()" id="dark-mode-btn" class="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-2 px-4 rounded-lg text-sm border border-gray-300 dark:border-gray-600 transition-colors">
-                🌙 Modo Oscuro
-            </button>
+            
+            <div class="flex flex-wrap justify-center items-center gap-2">
+                <!-- Botones de Sincronización / Respaldo JSON -->
+                <button onclick="exportBackupJSON()" title="Descargar copia de seguridad para pasar a otro dispositivo" class="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 font-semibold py-2 px-3 rounded-xl text-xs border border-emerald-200 dark:border-emerald-800 transition-colors">
+                    📤 Exportar Respaldo
+                </button>
+                <button onclick="document.getElementById('import-json-input').click()" title="Cargar archivo de respaldo desde otro dispositivo" class="flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 font-semibold py-2 px-3 rounded-xl text-xs border border-indigo-200 dark:border-indigo-800 transition-colors">
+                    📥 Importar Respaldo
+                </button>
+                <input type="file" id="import-json-input" accept=".json" onchange="importBackupJSON(event)" class="hidden">
+
+                <!-- Botón Modo Oscuro -->
+                <button onclick="toggleDarkMode()" id="dark-mode-btn" class="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-2 px-3.5 rounded-xl text-xs border border-gray-300 dark:border-gray-600 transition-colors">
+                    🌙 Oscuro
+                </button>
+            </div>
         </div>
 
         <!-- Tarjetas de Resumen Global -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-green-500 transition-colors">
-                <h3 class="text-gray-500 dark:text-gray-400 text-sm font-semibold uppercase tracking-wider">Ingresos Totales</h3>
-                <div id="total-income" class="text-lg md:text-xl font-bold text-green-600 dark:text-green-400 mt-2 space-y-1">S/ 0.00</div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-6">
+            <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 border-l-4 border-l-green-500 transition-colors">
+                <h3 class="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider">Ingresos Totales</h3>
+                <div id="total-income" class="text-lg md:text-xl font-extrabold text-green-600 dark:text-green-400 mt-1.5">S/ 0.00</div>
             </div>
-            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-red-500 transition-colors">
-                <h3 class="text-gray-500 dark:text-gray-400 text-sm font-semibold uppercase tracking-wider">Gastos Totales (Ejecutados)</h3>
-                <div id="total-expense" class="text-lg md:text-xl font-bold text-red-600 dark:text-red-400 mt-2 space-y-1">S/ 0.00</div>
+            <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 border-l-4 border-l-red-500 transition-colors">
+                <h3 class="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider">Gastos Ejecutados</h3>
+                <div id="total-expense" class="text-lg md:text-xl font-extrabold text-red-600 dark:text-red-400 mt-1.5">S/ 0.00</div>
             </div>
-            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-blue-500 transition-colors">
-                <h3 class="text-gray-500 dark:text-gray-400 text-sm font-semibold uppercase tracking-wider">Balance Disponible</h3>
-                <div id="total-balance" class="text-lg md:text-xl font-bold text-blue-600 dark:text-blue-400 mt-2 space-y-1">S/ 0.00</div>
+            <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 border-l-4 border-l-blue-500 transition-colors">
+                <h3 class="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider">Balance Disponible</h3>
+                <div id="total-balance" class="text-lg md:text-xl font-extrabold text-blue-600 dark:text-blue-400 mt-1.5">S/ 0.00</div>
             </div>
         </div>
 
-        <!-- Formularios y Configuración de Categorías (Prioridad Alta) -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <!-- Formularios y Configuración de Categorías -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             
             <!-- Formulario Registrar Movimiento + Opción en Cuotas -->
-            <div class="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md transition-colors">
-                <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Registrar Movimiento o Compra en Cuotas</h3>
+            <div class="lg:col-span-2 bg-white dark:bg-gray-800 p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors">
+                <h3 class="text-lg md:text-xl font-bold text-gray-800 dark:text-white mb-4">Registrar Movimiento o Compra en Cuotas</h3>
                 <form id="transaction-form" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1" id="date-label">Fecha de Registro / Pago de esta Cuota</label>
-                            <input type="date" id="date" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-blue-500">
+                            <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1" id="date-label">Fecha de Registro / Pago</label>
+                            <input type="date" id="date" required class="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
-                            <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Tipo de Movimiento</label>
-                            <select id="type" onchange="toggleInstallmentAvailability()" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-blue-500">
+                            <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Tipo de Movimiento</label>
+                            <select id="type" onchange="toggleInstallmentAvailability()" required class="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <option value="expense">Gasto / Compra (Egreso)</option>
                                 <option value="income">Ingreso</option>
                             </select>
@@ -67,26 +85,26 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Descripción</label>
-                        <input type="text" id="description" placeholder="Ej. Refrigeradora, Zapatillas, Supermercado" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-blue-500">
+                        <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Descripción</label>
+                        <input type="text" id="description" placeholder="Ej. Refrigeradora, Lentes, Supermercado" required class="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
-                            <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1" id="amount-label">Monto Total</label>
-                            <input type="number" id="amount" oninput="updateInstallmentPreview()" placeholder="Ej. 600.00" step="0.01" min="0.01" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-blue-500">
+                            <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1" id="amount-label">Monto</label>
+                            <input type="number" id="amount" oninput="updateInstallmentPreview()" placeholder="Ej. 600.00" step="0.01" min="0.01" required class="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
-                            <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Moneda</label>
-                            <select id="currency" onchange="updateInstallmentPreview()" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded font-bold text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-700 focus:outline-none focus:border-blue-500">
+                            <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Moneda</label>
+                            <select id="currency" onchange="updateInstallmentPreview()" required class="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm font-bold text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <option value="S/">Soles (S/)</option>
                                 <option value="$">Dólares ($)</option>
                                 <option value="€">Euros (€)</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Método de Pago</label>
-                            <select id="payment-method" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-blue-500">
+                            <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Método de Pago</label>
+                            <select id="payment-method" required class="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <option value="Tarjeta de Crédito">Tarjeta de Crédito (TC)</option>
                                 <option value="Yape / Plin">Yape / Plin</option>
                                 <option value="Transferencia">Transferencia Bancaria</option>
@@ -96,36 +114,36 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Categoría</label>
-                            <select id="category" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-blue-500">
+                            <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Categoría</label>
+                            <select id="category" required class="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <!-- Categorías por JS -->
                             </select>
                         </div>
 
                         <!-- Selector de Modalidad (Al contado vs Cuotas) -->
                         <div id="installment-toggle-wrapper">
-                            <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">¿Pago en Cuotas sin Intereses?</label>
-                            <select id="is-installment" onchange="toggleInstallmentFields()" class="w-full p-2 border border-indigo-300 dark:border-indigo-600 rounded bg-indigo-50/50 dark:bg-gray-700 text-indigo-900 dark:text-indigo-300 font-semibold focus:outline-none focus:border-indigo-500">
+                            <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">¿Pago en Cuotas sin Intereses?</label>
+                            <select id="is-installment" onchange="toggleInstallmentFields()" class="w-full p-2.5 border border-indigo-300 dark:border-indigo-600 rounded-xl text-sm bg-indigo-50/60 dark:bg-gray-700 text-indigo-900 dark:text-indigo-300 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                 <option value="no">No (Pago único / Al contado)</option>
                                 <option value="yes">💳 Sí, dividir en cuotas mensuales</option>
                             </select>
                         </div>
                     </div>
 
-                    <!-- Caja Desplegable de Configuración de Cuotas (Nuevas o Ya Iniciadas) -->
+                    <!-- Caja Desplegable de Configuración de Cuotas -->
                     <div id="installment-details-box" class="hidden bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-xl border border-indigo-200 dark:border-indigo-800 space-y-3">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
                             <div>
                                 <label class="block text-xs font-bold text-indigo-900 dark:text-indigo-300 mb-1">Total de Cuotas</label>
-                                <input type="number" id="installment-count" oninput="syncInstallmentInputs()" value="3" min="2" max="60" step="1" class="w-full p-2 border border-indigo-300 dark:border-indigo-700 rounded bg-white dark:bg-gray-800 dark:text-white font-bold">
+                                <input type="number" id="installment-count" oninput="syncInstallmentInputs()" value="3" min="2" max="60" step="1" class="w-full p-2 border border-indigo-300 dark:border-indigo-700 rounded-lg bg-white dark:bg-gray-800 dark:text-white font-bold">
                                 <span class="text-[11px] text-gray-500 dark:text-gray-400">Ej. 3, 6, 12 meses</span>
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-indigo-900 dark:text-indigo-300 mb-1">¿Qué cuota pagas este mes?</label>
-                                <input type="number" id="installment-current" oninput="updateInstallmentPreview()" value="1" min="1" max="60" step="1" class="w-full p-2 border border-indigo-300 dark:border-indigo-700 rounded bg-white dark:bg-gray-800 dark:text-white font-bold">
-                                <span class="text-[11px] text-gray-500 dark:text-gray-400">Pon <b>2</b> si el mes pasado pagaste la 1</span>
+                                <label class="block text-xs font-bold text-indigo-900 dark:text-indigo-300 mb-1">¿Qué cuota pagas hoy?</label>
+                                <input type="number" id="installment-current" oninput="updateInstallmentPreview()" value="1" min="1" max="60" step="1" class="w-full p-2 border border-indigo-300 dark:border-indigo-700 rounded-lg bg-white dark:bg-gray-800 dark:text-white font-bold">
+                                <span class="text-[11px] text-gray-500 dark:text-gray-400">Pon <b>2</b> si ya pagaste la 1</span>
                             </div>
                             <div class="bg-white dark:bg-gray-800 p-3 rounded-lg border border-indigo-100 dark:border-indigo-800/60">
                                 <span class="text-xs text-gray-500 dark:text-gray-400 block">Cuota mensual:</span>
@@ -135,43 +153,59 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200">
-                        Añadir Registro
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-sm transition duration-200">
+                        + Añadir Registro
                     </button>
                 </form>
             </div>
 
-            <!-- Crear Categoría y Asignar Presupuesto -->
-            <div class="space-y-6">
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md transition-colors">
-                    <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-2">Categoría y Presupuesto</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Crea categorías y asigna un tope mensual de gasto.</p>
+            <!-- Crear y Gestionar Categorías / Presupuestos -->
+            <div class="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col justify-between transition-colors">
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-lg font-bold text-gray-800 dark:text-white">Categorías y Topes</h3>
+                        <button onclick="openCategoryModal()" class="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1.5 rounded-lg border border-blue-200 dark:border-blue-800">
+                            ⚙️ Gestionar / Editar
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">Crea una categoría nueva o asígnale un presupuesto mensual máximo.</p>
+                    
                     <div class="space-y-3">
-                        <input type="text" id="new-category" placeholder="Ej. Restaurantes, Electrodomésticos" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-blue-500">
-                        <div class="flex gap-2">
-                            <input type="number" id="new-budget" placeholder="Límite mensual (opcional)" min="0" step="10" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-blue-500">
-                            <select id="new-budget-currency" class="p-2 border border-gray-300 dark:border-gray-600 rounded text-sm font-bold text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-700">
-                                <option value="S/">S/</option>
-                                <option value="$">$</option>
-                                <option value="€">€</option>
-                            </select>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Nombre de Categoría</label>
+                            <input type="text" id="new-category" placeholder="Ej. Salud, Mascotas, Ropa" class="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
-                        <button onclick="addCategory()" class="w-full bg-gray-800 dark:bg-gray-700 hover:bg-gray-900 dark:hover:bg-gray-600 text-white font-bold py-2 rounded-lg transition duration-200">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Presupuesto Mensual (Opcional)</label>
+                            <div class="flex gap-2">
+                                <input type="number" id="new-budget" placeholder="Ej. 400.00" min="0" step="10" class="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <select id="new-budget-currency" class="p-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm font-bold text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-700">
+                                    <option value="S/">S/</option>
+                                    <option value="$">$</option>
+                                    <option value="€">€</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button onclick="addCategory()" class="w-full bg-gray-800 dark:bg-gray-700 hover:bg-gray-900 dark:hover:bg-gray-600 text-white font-bold py-2.5 rounded-xl text-sm transition duration-200">
                             Guardar Categoría
                         </button>
                     </div>
                 </div>
+
+                <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
+                    💡 ¿Quieres cambiar el límite de <b>Comida</b> o borrar una categoría? Usa el botón <b>⚙️ Gestionar / Editar</b> arriba.
+                </div>
             </div>
         </div>
 
-        <!-- PANEL: SEGUIMIENTO Y RECORDATORIO DE COMPRAS EN CUOTAS -->
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md mb-8 border-t-4 border-indigo-500 transition-colors">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-gray-100 dark:border-gray-700 pb-4">
+        <!-- PANEL: SEGUIMIENTO DE COMPRAS EN CUOTAS -->
+        <div class="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 border-t-4 border-t-indigo-500 mb-6 transition-colors">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-5 border-b border-gray-100 dark:border-gray-700 pb-4">
                 <div>
-                    <h3 class="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                    <h3 class="text-lg md:text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
                         💳 Seguimiento de Compras en Cuotas
                     </h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Revisa en qué cuota vas, cuánto te falta pagar y registra la cuota de cada mes con un clic.</p>
+                    <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400">Controla en qué cuota vas, cuánto resta pagar y registra el siguiente mes con un clic.</p>
                 </div>
                 <div id="installments-summary-badge" class="text-xs font-bold bg-indigo-100 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-300 px-3 py-1.5 rounded-full">
                     0 compras activas
@@ -183,94 +217,124 @@
             </div>
         </div>
 
-        <!-- RECORDATORIO DE VENCIMIENTOS Y PAGOS PENDIENTES -->
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md mb-8 transition-colors">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-gray-100 dark:border-gray-700 pb-4">
+        <!-- SECCIÓN COLAPSABLE: RECORDATORIO DE VENCIMIENTOS Y SERVICIOS FIJOS -->
+        <details id="bills-Section-details" class="group bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 mb-6 transition-colors" open>
+            <summary class="p-5 md:p-6 cursor-pointer flex justify-between items-center select-none">
                 <div>
-                    <h3 class="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                    <h3 class="text-lg md:text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
                         ⏰ Recordatorio de Vencimientos y Servicios Fijos
+                        <span id="pending-bills-badge" class="text-xs font-bold bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 px-2.5 py-0.5 rounded-full">0 pendientes</span>
                     </h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Programa tus pagos de luz, agua, internet o tarjeta para evitar moras.</p>
+                    <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-0.5">Programa recibos de luz, internet, agua o tarjeta para evitar moras.</p>
+                </div>
+                <span class="text-gray-400 group-open:rotate-180 transition-transform duration-200 text-lg font-bold px-2">▼</span>
+            </summary>
+
+            <div class="px-5 md:px-6 pb-6 border-t border-gray-100 dark:border-gray-700 pt-4">
+                <!-- Formulario para añadir vencimiento -->
+                <form id="bill-reminder-form" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 mb-5 bg-amber-50/70 dark:bg-gray-700/40 p-4 rounded-xl border border-amber-200/80 dark:border-amber-800/40">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Servicio / Recibo</label>
+                        <input type="text" id="bill-name" placeholder="Ej. Luz, Internet" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Monto estimado</label>
+                        <div class="flex gap-1">
+                            <input type="number" id="bill-amount" placeholder="120.00" step="0.01" min="0.01" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 dark:text-white">
+                            <select id="bill-currency" class="p-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs font-bold text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-800">
+                                <option value="S/">S/</option>
+                                <option value="$">$</option>
+                                <option value="€">€</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Fecha Límite</label>
+                        <input type="date" id="bill-due-date" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Categoría</label>
+                        <select id="bill-category" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 dark:text-white"></select>
+                    </div>
+                    <div class="flex items-end sm:col-span-2 md:col-span-1">
+                        <button type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 rounded-lg text-sm transition duration-200">
+                            + Programar
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Lista de Vencimientos -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse min-w-[650px]">
+                        <thead class="bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300 text-xs uppercase border-b border-gray-200 dark:border-gray-700">
+                            <tr>
+                                <th class="py-3 px-4 font-semibold">Servicio</th>
+                                <th class="py-3 px-4 font-semibold">Fecha Límite</th>
+                                <th class="py-3 px-4 font-semibold">Estado</th>
+                                <th class="py-3 px-4 font-semibold">Monto</th>
+                                <th class="py-3 px-4 font-semibold text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bills-list" class="divide-y divide-gray-100 dark:divide-gray-700 text-sm"></tbody>
+                    </table>
+                </div>
+            </div>
+        </details>
+
+        <!-- Presupuestos del Mes + Gráfico Circular por Moneda (En 2 columnas en escritorio) -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            
+            <!-- Estado de Presupuestos Mensuales -->
+            <div class="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-start gap-2 mb-1">
+                        <h3 class="text-lg md:text-xl font-bold text-gray-800 dark:text-white">Presupuestos del Mes Actual</h3>
+                        <button onclick="openCategoryModal()" class="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline">
+                            Editar límites
+                        </button>
+                    </div>
+                    <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-5">Monitorea cuánto llevas gastado frente a tus topes mensuales.</p>
+                    <div id="budget-progress-container" class="space-y-4"></div>
                 </div>
             </div>
 
-            <!-- Formulario para añadir vencimiento -->
-            <form id="bill-reminder-form" class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-6 bg-amber-50 dark:bg-gray-700/50 p-4 rounded-xl border border-amber-200 dark:border-amber-800/40">
-                <div class="md:col-span-1">
-                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Servicio / Recibo</label>
-                    <input type="text" id="bill-name" placeholder="Ej. Luz, Internet, Celular" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-800 dark:text-white">
-                </div>
-                <div class="md:col-span-1">
-                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Monto estimado</label>
-                    <div class="flex gap-1">
-                        <input type="number" id="bill-amount" placeholder="120.00" step="0.01" min="0.01" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-800 dark:text-white">
-                        <select id="bill-currency" class="p-2 border border-gray-300 dark:border-gray-600 rounded text-xs font-bold text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-800">
-                            <option value="S/">S/</option>
-                            <option value="$">$</option>
-                            <option value="€">€</option>
-                        </select>
+            <!-- Gráfico de Distribución de Gastos Separado por Moneda -->
+            <div class="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+                    <div>
+                        <h3 class="text-lg md:text-xl font-bold text-gray-800 dark:text-white">Distribución por Categoría</h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Porcentaje exacto según la moneda elegida.</p>
+                    </div>
+                    <!-- Selector de Moneda para el Gráfico -->
+                    <div class="inline-flex rounded-xl bg-gray-100 dark:bg-gray-700 p-1">
+                        <button type="button" onclick="setChartCurrency('S/')" id="chart-btn-pen" class="px-3 py-1 rounded-lg text-xs font-bold transition-colors">S/ Soles</button>
+                        <button type="button" onclick="setChartCurrency('$')" id="chart-btn-usd" class="px-3 py-1 rounded-lg text-xs font-bold transition-colors">$ Dólares</button>
+                        <button type="button" onclick="setChartCurrency('€')" id="chart-btn-eur" class="px-3 py-1 rounded-lg text-xs font-bold transition-colors">€ Euros</button>
                     </div>
                 </div>
-                <div class="md:col-span-1">
-                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Fecha Límite</label>
-                    <input type="date" id="bill-due-date" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-800 dark:text-white">
-                </div>
-                <div class="md:col-span-1">
-                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Categoría</label>
-                    <select id="bill-category" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-800 dark:text-white"></select>
-                </div>
-                <div class="md:col-span-1 flex items-end">
-                    <button type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 rounded-lg text-sm transition duration-200">
-                        + Programar
-                    </button>
-                </div>
-            </form>
 
-            <!-- Lista de Vencimientos -->
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse min-w-[700px]">
-                    <thead class="bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
-                        <tr>
-                            <th class="py-3 px-4 font-semibold">Servicio</th>
-                            <th class="py-3 px-4 font-semibold">Fecha Límite</th>
-                            <th class="py-3 px-4 font-semibold">Estado</th>
-                            <th class="py-3 px-4 font-semibold">Monto</th>
-                            <th class="py-3 px-4 font-semibold text-center">Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody id="bills-list" class="divide-y divide-gray-100 dark:divide-gray-700"></tbody>
-                </table>
+                <div class="text-center mb-2">
+                    <span id="chart-total-label" class="text-xs font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700/70 px-3 py-1 rounded-full">Total: S/ 0.00</span>
+                </div>
+
+                <div class="max-w-sm mx-auto relative h-64">
+                    <canvas id="categoryChart"></canvas>
+                </div>
             </div>
         </div>
 
-        <!-- Estado de Presupuestos Mensuales -->
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md mb-8 transition-colors">
-            <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-1">Estado de Presupuestos del Mes</h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Monitorea tus límites de gasto para no sobrepasarte.</p>
-            <div id="budget-progress-container" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
-        </div>
-
-        <!-- Gráfico de Distribución de Gastos -->
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md mb-8 transition-colors">
-            <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-2">Distribución de Gastos por Categoría (%)</h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Visualiza el porcentaje de tus gastos distribuidos por categoría.</p>
-            <div class="max-w-md mx-auto relative h-72">
-                <canvas id="categoryChart"></canvas>
-            </div>
-        </div>
-
-        <!-- Tabla Interactiva de Resumen -->
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md mb-8 transition-colors">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-gray-100 dark:border-gray-700 pb-4">
+        <!-- Tabla Interactiva de Resumen + Exportación Colapsable -->
+        <div class="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 mb-6 transition-colors">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-5 border-b border-gray-100 dark:border-gray-700 pb-4">
                 <div>
-                    <h3 class="text-xl font-bold text-gray-800 dark:text-white">Resumen y Análisis de Gastos</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Selecciona qué tipo de resumen deseas visualizar o exporta tus datos.</p>
+                    <h3 class="text-lg md:text-xl font-bold text-gray-800 dark:text-white">Resumen y Análisis de Gastos</h3>
+                    <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400">Agrupa tus movimientos por mes, categoría o método de pago.</p>
                 </div>
 
                 <div class="flex flex-wrap gap-3 items-end">
                     <div>
                         <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Modo de Vista:</label>
-                        <select id="summary-view-type" onchange="updateUI()" class="p-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-semibold bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:border-blue-500">
+                        <select id="summary-view-type" onchange="updateUI()" class="p-2 border border-gray-300 dark:border-gray-600 rounded-xl text-xs md:text-sm font-semibold bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:border-blue-500">
                             <option value="monthly">Resumen por Mes / Año</option>
                             <option value="category">Gastos por Categoría</option>
                             <option value="payment-method">Gastos por Método de Pago</option>
@@ -279,60 +343,86 @@
                     
                     <div id="month-filter-container" class="hidden">
                         <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Filtrar por Mes:</label>
-                        <select id="summary-month-filter" onchange="updateUI()" class="p-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-semibold bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:border-blue-500">
+                        <select id="summary-month-filter" onchange="updateUI()" class="p-2 border border-gray-300 dark:border-gray-600 rounded-xl text-xs md:text-sm font-semibold bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:border-blue-500">
                             <option value="all">Todos los Meses</option>
                         </select>
                     </div>
                 </div>
             </div>
 
-            <!-- Exportación a Excel por Rango de Fechas -->
-            <div class="bg-blue-50 dark:bg-gray-700/50 p-4 rounded-xl mb-6 border border-blue-100 dark:border-gray-600 flex flex-col md:flex-row items-center justify-between gap-4">
-                <div class="text-sm">
-                    <span class="font-bold text-blue-900 dark:text-blue-300 block">Exportar Reporte a Excel / CSV (Fecha de Corte)</span>
-                    <span class="text-blue-700 dark:text-blue-400 text-xs">Selecciona las fechas de tu ciclo de facturación para descargar tu reporte.</span>
-                </div>
-                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                    <div>
-                        <label class="block text-xs text-gray-600 dark:text-gray-300 mb-1">Desde:</label>
-                        <input type="date" id="export-start-date" class="p-2 border border-gray-300 dark:border-gray-600 rounded text-xs bg-white dark:bg-gray-800 dark:text-white">
+            <!-- Exportación a Excel Colapsable para no ocupar espacio innecesario en móvil -->
+            <details class="group bg-blue-50/70 dark:bg-gray-700/40 rounded-xl mb-5 border border-blue-100 dark:border-gray-600">
+                <summary class="p-3.5 cursor-pointer flex justify-between items-center text-xs md:text-sm font-bold text-blue-900 dark:text-blue-300 select-none">
+                    <span>📊 Exportar Reporte a Excel / CSV (Por Fecha de Corte)</span>
+                    <span class="text-blue-500 group-open:rotate-180 transition-transform duration-200">▼</span>
+                </summary>
+                <div class="px-4 pb-4 pt-1 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3 border-t border-blue-100/80 dark:border-gray-600">
+                    <span class="text-blue-700 dark:text-blue-400 text-xs">Filtra opcionalmente las fechas de tu ciclo de tarjeta para descargar en Excel.</span>
+                    <div class="flex flex-wrap items-end gap-2 w-full sm:w-auto">
+                        <div>
+                            <label class="block text-[11px] text-gray-600 dark:text-gray-300 mb-1">Desde:</label>
+                            <input type="date" id="export-start-date" class="p-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-gray-600 dark:text-gray-300 mb-1">Hasta:</label>
+                            <input type="date" id="export-end-date" class="p-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 dark:text-white">
+                        </div>
+                        <button onclick="exportToCSV()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-1.5 px-3.5 rounded-lg text-xs transition duration-200">
+                            Descargar CSV
+                        </button>
                     </div>
-                    <div>
-                        <label class="block text-xs text-gray-600 dark:text-gray-300 mb-1">Hasta:</label>
-                        <input type="date" id="export-end-date" class="p-2 border border-gray-300 dark:border-gray-600 rounded text-xs bg-white dark:bg-gray-800 dark:text-white">
-                    </div>
-                    <button onclick="exportToCSV()" class="mt-4 md:mt-0 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-xs transition duration-200 flex items-center gap-2">
-                        📊 Exportar Excel (CSV)
-                    </button>
                 </div>
-            </div>
+            </details>
 
             <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse min-w-[600px]">
-                    <thead id="summary-table-head" class="bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700"></thead>
-                    <tbody id="summary-table-body" class="divide-y divide-gray-100 dark:divide-gray-700"></tbody>
+                <table class="w-full text-left border-collapse min-w-[550px]">
+                    <thead id="summary-table-head" class="bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300 text-xs uppercase border-b border-gray-200 dark:border-gray-700"></thead>
+                    <tbody id="summary-table-body" class="divide-y divide-gray-100 dark:divide-gray-700 text-sm"></tbody>
                 </table>
             </div>
         </div>
 
         <!-- Historial Detallado de Movimientos -->
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md overflow-x-auto transition-colors">
-            <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Historial de Movimientos Detallado</h3>
-            <table class="w-full text-left border-collapse min-w-[800px]">
+        <div class="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-x-auto transition-colors">
+            <h3 class="text-lg md:text-xl font-bold text-gray-800 dark:text-white mb-4">Historial de Movimientos Detallado</h3>
+            <table class="w-full text-left border-collapse min-w-[780px]">
                 <thead>
-                    <tr class="bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
+                    <tr class="bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300 text-xs uppercase border-b border-gray-200 dark:border-gray-700">
                         <th class="py-3 px-4 font-semibold">Fecha</th>
                         <th class="py-3 px-4 font-semibold">Descripción</th>
                         <th class="py-3 px-4 font-semibold">Categoría</th>
                         <th class="py-3 px-4 font-semibold">Método de Pago</th>
                         <th class="py-3 px-4 font-semibold">Monto</th>
-                        <th class="py-3 px-4 font-semibold">Acción</th>
+                        <th class="py-3 px-4 font-semibold text-center">Acción</th>
                     </tr>
                 </thead>
-                <tbody id="transaction-list" class="divide-y divide-gray-100 dark:divide-gray-700"></tbody>
+                <tbody id="transaction-list" class="divide-y divide-gray-100 dark:divide-gray-700 text-sm"></tbody>
             </table>
         </div>
 
+    </div>
+
+    <!-- MODAL: GESTIÓN COMPLETA DE CATEGORÍAS Y PRESUPUESTOS -->
+    <div id="category-modal" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-xl rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="p-5 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">⚙️ Gestionar Categorías y Presupuestos</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Edita o quita límites mensuales (pon 0 para sin límite) o elimina categorías.</p>
+                </div>
+                <button onclick="closeCategoryModal()" class="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-xl font-bold px-2">✕</button>
+            </div>
+
+            <div id="category-modal-list" class="p-5 overflow-y-auto space-y-3 divide-y divide-gray-100 dark:divide-gray-700/60">
+                <!-- Generado dinámicamente -->
+            </div>
+
+            <div class="p-4 bg-gray-50 dark:bg-gray-800/80 border-t border-gray-100 dark:border-gray-700 flex justify-end">
+                <button onclick="closeCategoryModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-5 rounded-xl text-sm transition-colors">
+                    Listo
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -345,10 +435,10 @@
             const btn = document.getElementById('dark-mode-btn');
             if (isDarkMode) {
                 root.classList.add('dark');
-                btn.innerHTML = '☀️ Modo Claro';
+                btn.innerHTML = '☀️ Claro';
             } else {
                 root.classList.remove('dark');
-                btn.innerHTML = '🌙 Modo Oscuro';
+                btn.innerHTML = '🌙 Oscuro';
             }
         }
         function toggleDarkMode() {
@@ -368,6 +458,7 @@
         };
         let fixedBills = JSON.parse(localStorage.getItem('fixedBills')) || [];
         let installmentPlans = JSON.parse(localStorage.getItem('installmentPlans')) || [];
+        let selectedChartCurrency = localStorage.getItem('selectedChartCurrency') || 'S/';
 
         let chartInstance = null;
 
@@ -391,7 +482,7 @@
                 .replace(/'/g, '&#39;');
         }
 
-        // Ordenar por fecha (más reciente primero) y, en el mismo día, el último agregado encima (mayor id primero)
+        // Ordenar por fecha (más reciente primero) y, en el mismo día, el último agregado encima
         function sortTransactions() {
             transactions.sort((a, b) => {
                 if (a.date !== b.date) {
@@ -402,13 +493,189 @@
         }
 
         function init() {
+            if (!categories.includes('Otros')) {
+                categories.push('Otros');
+                localStorage.setItem('categories', JSON.stringify(categories));
+            }
             sortTransactions();
             updateCategoriesSelect();
             populateMonthFilterOptions();
+            // Colapsar vencimientos por defecto en pantallas pequeñas si no hay pendientes
+            if (window.innerWidth < 768 && fixedBills.filter(b => !b.isPaid).length === 0) {
+                document.getElementById('bills-Section-details').removeAttribute('open');
+            }
             updateUI();
         }
 
-        // Lógica de interfaz para Cuotas (Nuevas o Ya Iniciadas)
+        // ==========================================
+        // 1. SINCRONIZACIÓN / RESPALDO JSON COMPLETO
+        // ==========================================
+        function exportBackupJSON() {
+            const backupData = {
+                version: 2,
+                exportedAt: new Date().toISOString(),
+                transactions,
+                categories,
+                categoryBudgets,
+                fixedBills,
+                installmentPlans
+            };
+
+            const jsonStr = JSON.stringify(backupData, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Respaldo_Presupuesto_${todayStr}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function importBackupJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (!imported || !Array.isArray(imported.transactions)) {
+                        alert('❌ El archivo seleccionado no es un respaldo válido de esta aplicación.');
+                        return;
+                    }
+
+                    const txCount = imported.transactions.length;
+                    const plansCount = Array.isArray(imported.installmentPlans) ? imported.installmentPlans.length : 0;
+
+                    if (confirm(`📥 ¿Deseas restaurar este respaldo?\n\n• Movimientos incluidos: ${txCount}\n• Planes de cuotas: ${plansCount}\n\nNota: Esto reemplazará los datos actuales de este navegador por los del respaldo.`)) {
+                        transactions = imported.transactions || [];
+                        categories = Array.isArray(imported.categories) && imported.categories.length > 0 ? imported.categories : defaultCategories;
+                        if (!categories.includes('Otros')) categories.push('Otros');
+                        categoryBudgets = imported.categoryBudgets || {};
+                        fixedBills = imported.fixedBills || [];
+                        installmentPlans = imported.installmentPlans || [];
+
+                        localStorage.setItem('transactions', JSON.stringify(transactions));
+                        localStorage.setItem('categories', JSON.stringify(categories));
+                        localStorage.setItem('categoryBudgets', JSON.stringify(categoryBudgets));
+                        localStorage.setItem('fixedBills', JSON.stringify(fixedBills));
+                        localStorage.setItem('installmentPlans', JSON.stringify(installmentPlans));
+
+                        sortTransactions();
+                        updateCategoriesSelect();
+                        populateMonthFilterOptions();
+                        updateUI();
+                        alert('✅ ¡Respaldo importado y sincronizado con éxito!');
+                    }
+                } catch (err) {
+                    alert('❌ Error al leer el archivo JSON. Asegúrate de seleccionar el archivo de respaldo correcto.');
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // ==========================================
+        // 2. GESTIÓN COMPLETA DE CATEGORÍAS (MODAL)
+        // ==========================================
+        function openCategoryModal() {
+            renderCategoryModalList();
+            document.getElementById('category-modal').classList.remove('hidden');
+        }
+
+        function closeCategoryModal() {
+            document.getElementById('category-modal').classList.add('hidden');
+        }
+
+        function renderCategoryModalList() {
+            const container = document.getElementById('category-modal-list');
+            container.innerHTML = '';
+
+            categories.forEach((cat, idx) => {
+                const bObj = categoryBudgets[cat] || { amount: '', currency: 'S/' };
+                const isProtected = cat === 'Otros';
+
+                const item = document.createElement('div');
+                item.className = "pt-3 first:pt-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2";
+                item.innerHTML = `
+                    <div class="font-bold text-sm text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                        <span>${escapeHtml(cat)}</span>
+                        ${isProtected ? '<span class="text-[10px] bg-gray-200 dark:bg-gray-700 text-gray-500 px-2 py-0.5 rounded-full font-normal">Base</span>' : ''}
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="number" id="edit-budget-amt-${idx}" value="${bObj.amount !== '' ? bObj.amount : ''}" placeholder="Sin límite" min="0" step="10" class="w-28 p-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-700 dark:text-white">
+                        <select id="edit-budget-curr-${idx}" class="p-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-xs font-bold text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-700">
+                            <option value="S/" ${bObj.currency === 'S/' ? 'selected' : ''}>S/</option>
+                            <option value="$" ${bObj.currency === '$' ? 'selected' : ''}>$</option>
+                            <option value="€" ${bObj.currency === '€' ? 'selected' : ''}>€</option>
+                        </select>
+                        <button onclick="saveCategoryBudgetFromModal(${idx})" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-2.5 py-1.5 rounded-lg text-xs transition-colors">
+                            Guardar
+                        </button>
+                        ${!isProtected ? `
+                            <button onclick="deleteCategoryFromModal(${idx})" title="Eliminar categoría" class="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 border border-red-300 dark:border-red-800 font-bold px-2 py-1.5 rounded-lg text-xs transition-colors">
+                                🗑️
+                            </button>
+                        ` : '<div class="w-8"></div>'}
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function saveCategoryBudgetFromModal(idx) {
+            const cat = categories[idx];
+            if (!cat) return;
+            const amtVal = parseFloat(document.getElementById(`edit-budget-amt-${idx}`).value);
+            const currVal = document.getElementById(`edit-budget-curr-${idx}`).value;
+
+            if (!isNaN(amtVal) && amtVal > 0) {
+                categoryBudgets[cat] = { amount: amtVal, currency: currVal };
+            } else {
+                delete categoryBudgets[cat];
+            }
+            localStorage.setItem('categoryBudgets', JSON.stringify(categoryBudgets));
+            renderCategoryModalList();
+            updateUI();
+        }
+
+        function deleteCategoryFromModal(idx) {
+            const cat = categories[idx];
+            if (!cat || cat === 'Otros') return;
+
+            const usedCount = transactions.filter(t => t.category === cat).length;
+            const msg = usedCount > 0
+                ? `¿Eliminar la categoría "${cat}"?\n\nTienes ${usedCount} movimiento(s) en esta categoría que pasarán automáticamente a "Otros".`
+                : `¿Estás seguro de eliminar la categoría "${cat}"?`;
+
+            if (confirm(msg)) {
+                categories.splice(idx, 1);
+                delete categoryBudgets[cat];
+
+                transactions.forEach(t => { if (t.category === cat) t.category = 'Otros'; });
+                installmentPlans.forEach(p => { if (p.category === cat) p.category = 'Otros'; });
+                fixedBills.forEach(b => { if (b.category === cat) b.category = 'Otros'; });
+
+                localStorage.setItem('categories', JSON.stringify(categories));
+                localStorage.setItem('categoryBudgets', JSON.stringify(categoryBudgets));
+                localStorage.setItem('transactions', JSON.stringify(transactions));
+                localStorage.setItem('installmentPlans', JSON.stringify(installmentPlans));
+                localStorage.setItem('fixedBills', JSON.stringify(fixedBills));
+
+                updateCategoriesSelect();
+                renderCategoryModalList();
+                updateUI();
+            }
+        }
+
+        // ==========================================
+        // LÓGICA DE CUOTAS Y CATEGORÍAS
+        // ==========================================
         function toggleInstallmentAvailability() {
             const type = document.getElementById('type').value;
             const wrapper = document.getElementById('installment-toggle-wrapper');
@@ -467,7 +734,6 @@
             }
         }
 
-        // Sumar meses respetando fin de mes
         function addMonthsToDate(dateStr, monthsToAdd) {
             const parts = dateStr.split('-').map(Number);
             const targetMonth = parts[1] - 1 + monthsToAdd;
@@ -482,6 +748,7 @@
         }
 
         function updateCategoriesSelect() {
+            const prevCat = categorySelect.value;
             categorySelect.innerHTML = '';
             billCategorySelect.innerHTML = '';
             categories.forEach(category => {
@@ -495,6 +762,9 @@
                 option2.textContent = category;
                 billCategorySelect.appendChild(option2);
             });
+            if (categories.includes(prevCat)) {
+                categorySelect.value = prevCat;
+            }
             if (categories.includes('Servicios')) {
                 billCategorySelect.value = 'Servicios';
             }
@@ -518,14 +788,14 @@
                 }
 
                 updateCategoriesSelect();
+                categorySelect.value = newCatValue;
                 newCatInput.value = '';
                 document.getElementById('new-budget').value = '';
-                alert(`¡Categoría "${newCatValue}" configurada!`);
                 updateUI();
             }
         }
 
-        // Registro de Movimientos (Normales y en Cuotas nuevas o ya empezadas)
+        // Registro de Movimientos
         form.addEventListener('submit', function(e) {
             e.preventDefault();
             const dateVal = document.getElementById('date').value;
@@ -558,7 +828,6 @@
 
                 const planId = Date.now();
 
-                // 1. Registrar la cuota que toca este mes en los gastos ejecutados
                 const currentTx = {
                     id: planId + 1,
                     date: dateVal,
@@ -574,7 +843,6 @@
                 sortTransactions();
                 localStorage.setItem('transactions', JSON.stringify(transactions));
 
-                // 2. Crear el Plan de Cuotas partiendo desde la cuota actual
                 const newPlan = {
                     id: planId,
                     description: descVal,
@@ -611,7 +879,12 @@
                 checkBudgetAlerts(transaction);
             }
 
-            // Limpiar formulario
+            // Si registró en otra moneda, mostrar esa moneda en el gráfico automáticamente
+            if (typeVal === 'expense') {
+                selectedChartCurrency = currVal;
+                localStorage.setItem('selectedChartCurrency', selectedChartCurrency);
+            }
+
             document.getElementById('description').value = '';
             document.getElementById('amount').value = '';
             document.getElementById('is-installment').value = 'no';
@@ -622,7 +895,6 @@
             updateUI();
         });
 
-        // Pagar la siguiente cuota de un plan
         function payNextInstallment(planId) {
             const plan = installmentPlans.find(p => p.id === planId);
             if (!plan || plan.paidInstallments >= plan.totalInstallments) return;
@@ -670,7 +942,7 @@
         }
 
         function deleteInstallmentPlan(planId) {
-            if (confirm("¿Deseas eliminar el seguimiento de este plan de cuotas? (Las cuotas que ya registraste en tu historial de gastos se mantendrán).")) {
+            if (confirm("¿Deseas eliminar el seguimiento de este plan de cuotas? (Las cuotas que ya registraste en tu historial se mantendrán).")) {
                 installmentPlans = installmentPlans.filter(p => p.id !== planId);
                 localStorage.setItem('installmentPlans', JSON.stringify(installmentPlans));
                 updateUI();
@@ -686,7 +958,7 @@
             badge.textContent = `${activeCount} ${activeCount === 1 ? 'compra activa' : 'compras activas'}`;
 
             if (installmentPlans.length === 0) {
-                container.innerHTML = `<div class="col-span-2 py-6 text-center text-gray-500 dark:text-gray-400 italic bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">No tienes compras en cuotas registradas. Al añadir un gasto, elige "Sí, dividir en cuotas mensuales" para hacerle seguimiento aquí.</div>`;
+                container.innerHTML = `<div class="col-span-2 py-6 text-center text-sm text-gray-500 dark:text-gray-400 italic bg-gray-50 dark:bg-gray-700/30 rounded-xl border border-dashed border-gray-300 dark:border-gray-600">No tienes compras en cuotas activas. Al añadir un gasto, elige "Sí, dividir en cuotas mensuales" para hacerle seguimiento aquí.</div>`;
                 return;
             }
 
@@ -709,17 +981,17 @@
 
                 let alertTag = '';
                 if (isCompleted) {
-                    alertTag = `<span class="bg-green-100 text-green-800 dark:bg-green-900/60 dark:text-green-300 text-xs font-bold px-2.5 py-1 rounded-full">✅ COMPLETADO (${plan.totalInstallments}/${plan.totalInstallments})</span>`;
+                    alertTag = `<span class="bg-green-100 text-green-800 dark:bg-green-900/60 dark:text-green-300 text-[11px] font-bold px-2.5 py-1 rounded-full">✅ COMPLETADO</span>`;
                 } else {
                     const dueObj = new Date(plan.nextDueDate + 'T00:00:00');
                     const diffDays = Math.ceil((dueObj - today) / (1000 * 60 * 60 * 24));
 
                     if (diffDays < 0) {
-                        alertTag = `<span class="bg-red-100 text-red-800 dark:bg-red-900/60 dark:text-red-300 text-xs font-bold px-2.5 py-1 rounded-full">🚨 Cuota ${plan.paidInstallments + 1} vencida hace ${Math.abs(diffDays)}d</span>`;
+                        alertTag = `<span class="bg-red-100 text-red-800 dark:bg-red-900/60 dark:text-red-300 text-[11px] font-bold px-2.5 py-1 rounded-full">🚨 Cuota ${plan.paidInstallments + 1} vencida (${Math.abs(diffDays)}d)</span>`;
                     } else if (diffDays <= 7) {
-                        alertTag = `<span class="bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300 text-xs font-bold px-2.5 py-1 rounded-full">⚠️ Cuota ${plan.paidInstallments + 1} vence en ${diffDays}d</span>`;
+                        alertTag = `<span class="bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300 text-[11px] font-bold px-2.5 py-1 rounded-full">⚠️ Vence en ${diffDays}d</span>`;
                     } else {
-                        alertTag = `<span class="bg-indigo-100 text-indigo-800 dark:bg-indigo-900/60 dark:text-indigo-300 text-xs font-semibold px-2.5 py-1 rounded-full">📅 Próxima cuota: ${plan.nextDueDate}</span>`;
+                        alertTag = `<span class="bg-indigo-100 text-indigo-800 dark:bg-indigo-900/60 dark:text-indigo-300 text-[11px] font-semibold px-2.5 py-1 rounded-full">📅 Próxima: ${plan.nextDueDate}</span>`;
                     }
                 }
 
@@ -728,10 +1000,10 @@
                 card.innerHTML = `
                     <div class="flex justify-between items-start gap-2 mb-2">
                         <div>
-                            <h4 class="font-bold text-gray-900 dark:text-white text-base">${escapeHtml(plan.description)}</h4>
+                            <h4 class="font-bold text-gray-900 dark:text-white text-sm md:text-base">${escapeHtml(plan.description)}</h4>
                             <span class="text-xs text-gray-500 dark:text-gray-400">${escapeHtml(plan.category)} • ${escapeHtml(plan.paymentMethod)}</span>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-1.5">
                             ${alertTag}
                             <button onclick="deleteInstallmentPlan(${plan.id})" title="Eliminar seguimiento" class="text-gray-400 hover:text-red-500 font-bold text-xs px-1.5 py-0.5">✕</button>
                         </div>
@@ -749,11 +1021,11 @@
                     <div class="flex flex-wrap justify-between items-center gap-2 pt-2 border-t border-gray-200/70 dark:border-gray-600/60 text-xs">
                         <div class="text-gray-600 dark:text-gray-300">
                             Total: <b>${plan.currency} ${plan.totalAmount.toFixed(2)}</b> 
-                            ${!isCompleted ? `• Falta: <b class="text-red-600 dark:text-red-400">${plan.currency} ${remainingAmount.toFixed(2)}</b> (${remainingCount} ${remainingCount === 1 ? 'cuota' : 'cuotas'})` : ''}
+                            ${!isCompleted ? `• Resta: <b class="text-red-600 dark:text-red-400">${plan.currency} ${remainingAmount.toFixed(2)}</b> (${remainingCount})` : ''}
                         </div>
                         ${!isCompleted ? `
-                            <button onclick="payNextInstallment(${plan.id})" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition-colors shadow-sm">
-                                + Registrar Cuota ${plan.paidInstallments + 1}/${plan.totalInstallments}
+                            <button onclick="payNextInstallment(${plan.id})" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition-colors shadow-xs">
+                                + Pagar Cuota ${plan.paidInstallments + 1}/${plan.totalInstallments}
                             </button>
                         ` : ''}
                     </div>
@@ -762,6 +1034,7 @@
             });
         }
 
+        // Vencimientos y Servicios Fijos
         billForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const bill = {
@@ -810,6 +1083,7 @@
 
             alert(`✅ ¡Servicio "${bill.name}" registrado como PAGADO en tus gastos!`);
             populateMonthFilterOptions();
+            checkBudgetAlerts(transaction);
             updateUI();
         }
 
@@ -823,10 +1097,14 @@
 
         function renderBills() {
             const tbody = document.getElementById('bills-list');
+            const pendingBadge = document.getElementById('pending-bills-badge');
             tbody.innerHTML = '';
 
+            const pendingCount = fixedBills.filter(b => !b.isPaid).length;
+            pendingBadge.textContent = `${pendingCount} ${pendingCount === 1 ? 'pendiente' : 'pendientes'}`;
+
             if (fixedBills.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-gray-500 dark:text-gray-400 italic">No tienes pagos o servicios programados aún.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-gray-500 dark:text-gray-400 italic">No tienes servicios o recibos programados aún.</td></tr>`;
                 return;
             }
 
@@ -844,9 +1122,9 @@
                 } else if (diffDays < 0) {
                     statusBadge = `<span class="bg-red-100 text-red-800 dark:bg-red-900/60 dark:text-red-300 text-xs font-bold px-2 py-1 rounded-full">🚨 VENCIDO (${Math.abs(diffDays)}d)</span>`;
                 } else if (diffDays <= 5) {
-                    statusBadge = `<span class="bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300 text-xs font-bold px-2 py-1 rounded-full">⚠️ VENCE EN ${diffDays} DÍAS</span>`;
+                    statusBadge = `<span class="bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300 text-xs font-bold px-2 py-1 rounded-full">⚠️ VENCE EN ${diffDays}d</span>`;
                 } else {
-                    statusBadge = `<span class="bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300 text-xs font-semibold px-2 py-1 rounded-full">📅 Pendiente (${diffDays}d)</span>`;
+                    statusBadge = `<span class="bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300 text-xs font-semibold px-2 py-1 rounded-full">📅 En ${diffDays} días</span>`;
                 }
 
                 const row = document.createElement('tr');
@@ -856,11 +1134,11 @@
                         ${escapeHtml(b.name)} 
                         <span class="text-xs text-gray-400 block font-normal">${escapeHtml(b.category)}</span>
                     </td>
-                    <td class="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">${b.dueDate}</td>
+                    <td class="py-3 px-4 text-gray-700 dark:text-gray-300">${b.dueDate}</td>
                     <td class="py-3 px-4">${statusBadge}</td>
                     <td class="py-3 px-4 font-bold text-gray-800 dark:text-gray-200">${b.currency} ${b.amount.toFixed(2)}</td>
                     <td class="py-3 px-4 text-center space-x-2">
-                        ${!b.isPaid ? `<button onclick="payBill(${b.id})" class="bg-green-600 hover:bg-green-700 text-white font-bold px-3 py-1 rounded text-xs transition-colors">Pagar y Registrar</button>` : ''}
+                        ${!b.isPaid ? `<button onclick="payBill(${b.id})" class="bg-green-600 hover:bg-green-700 text-white font-bold px-3 py-1 rounded-lg text-xs transition-colors">Pagar</button>` : ''}
                         <button onclick="deleteBill(${b.id})" class="text-gray-400 hover:text-red-500 font-bold px-2 py-1 text-xs">✕</button>
                     </td>
                 `;
@@ -932,7 +1210,6 @@
             }
         }
 
-        // Actualizar Categoría desde el historial y sincronizar gráficos, presupuestos y planes de cuotas
         function updateCategory(id, newCategory) {
             const transaction = transactions.find(t => t.id === id);
             if (transaction) {
@@ -1017,16 +1294,14 @@
             const today = new Date();
             const currentMonthYear = getMonthYear(today.toISOString().split('T')[0]);
 
-            const catKeys = Object.keys(categoryBudgets);
+            const catKeys = Object.keys(categoryBudgets).filter(cat => categoryBudgets[cat] && categoryBudgets[cat].amount > 0);
             if (catKeys.length === 0) {
-                container.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400 italic col-span-2">No has asignado presupuestos a ninguna categoría aún.</p>';
+                container.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400 italic py-4">No tienes presupuestos activos. Haz clic en "Editar límites" para asignar topes mensuales.</p>';
                 return;
             }
 
             catKeys.forEach(cat => {
                 const bObj = categoryBudgets[cat];
-                if (!bObj || !bObj.amount) return;
-
                 let spent = 0;
                 transactions.forEach(t => {
                     if (t.type === 'expense' && t.category === cat && t.currency === bObj.currency && getMonthYear(t.date) === currentMonthYear) {
@@ -1034,49 +1309,74 @@
                     }
                 });
 
-                const pct = Math.min(((spent / bObj.amount) * 100), 100);
+                const rawPct = (spent / bObj.amount) * 100;
+                const pct = Math.min(rawPct, 100);
                 
-                let barColor = 'bg-green-500';
-                let textColor = 'text-green-600 dark:text-green-400';
-                if (pct >= 100) {
+                let barColor = 'bg-emerald-500';
+                let textColor = 'text-emerald-600 dark:text-emerald-400';
+                if (rawPct >= 100) {
                     barColor = 'bg-red-600';
                     textColor = 'text-red-600 dark:text-red-400 font-bold';
-                } else if (pct >= 80) {
+                } else if (rawPct >= 80) {
                     barColor = 'bg-amber-500';
                     textColor = 'text-amber-600 dark:text-amber-400 font-semibold';
                 }
 
                 const card = document.createElement('div');
-                card.className = "bg-gray-50 dark:bg-gray-700/40 p-4 rounded-lg border border-gray-200 dark:border-gray-600";
+                card.className = "bg-gray-50 dark:bg-gray-700/40 p-3.5 rounded-xl border border-gray-200 dark:border-gray-600";
                 card.innerHTML = `
-                    <div class="flex justify-between items-center mb-2">
+                    <div class="flex justify-between items-center mb-1.5">
                         <span class="font-bold text-gray-800 dark:text-gray-200 text-sm">${escapeHtml(cat)}</span>
-                        <span class="text-xs ${textColor}">${bObj.currency} ${spent.toFixed(2)} / ${bObj.currency} ${bObj.amount.toFixed(2)} (${pct.toFixed(0)}%)</span>
+                        <span class="text-xs ${textColor}">${bObj.currency} ${spent.toFixed(2)} / ${bObj.currency} ${bObj.amount.toFixed(2)} (${rawPct.toFixed(0)}%)</span>
                     </div>
-                    <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-3 overflow-hidden">
-                        <div class="${barColor} h-3 rounded-full transition-all duration-300" style="width: ${pct}%"></div>
+                    <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2.5 overflow-hidden">
+                        <div class="${barColor} h-2.5 rounded-full transition-all duration-300" style="width: ${pct}%"></div>
                     </div>
                 `;
                 container.appendChild(card);
             });
         }
 
+        // ==========================================
+        // 3. GRÁFICO CIRCULAR SEPARADO POR MONEDA
+        // ==========================================
+        function setChartCurrency(curr) {
+            selectedChartCurrency = curr;
+            localStorage.setItem('selectedChartCurrency', curr);
+            updateUI();
+        }
+
+        function updateChartCurrencyButtons() {
+            const map = { 'S/': 'chart-btn-pen', '$': 'chart-btn-usd', '€': 'chart-btn-eur' };
+            Object.keys(map).forEach(curr => {
+                const btn = document.getElementById(map[curr]);
+                if (curr === selectedChartCurrency) {
+                    btn.className = "px-3 py-1 rounded-lg text-xs font-bold bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-xs transition-colors";
+                } else {
+                    btn.className = "px-3 py-1 rounded-lg text-xs font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors";
+                }
+            });
+        }
+
         function updateChart(categoryTotalsByCurr) {
+            updateChartCurrencyButtons();
             const ctx = document.getElementById('categoryChart').getContext('2d');
             
-            let flatCategoryTotals = {};
+            let currencyCategoryTotals = {};
             let grandTotal = 0;
 
             Object.keys(categoryTotalsByCurr).forEach(cat => {
-                Object.keys(categoryTotalsByCurr[cat]).forEach(curr => {
-                    const amt = categoryTotalsByCurr[cat][curr];
-                    flatCategoryTotals[cat] = (flatCategoryTotals[cat] || 0) + amt;
+                const amt = categoryTotalsByCurr[cat][selectedChartCurrency] || 0;
+                if (amt > 0) {
+                    currencyCategoryTotals[cat] = amt;
                     grandTotal += amt;
-                });
+                }
             });
 
-            const labels = Object.keys(flatCategoryTotals);
-            const dataValues = Object.values(flatCategoryTotals);
+            document.getElementById('chart-total-label').textContent = `Total en ${selectedChartCurrency}: ${selectedChartCurrency} ${grandTotal.toFixed(2)}`;
+
+            const labels = Object.keys(currencyCategoryTotals);
+            const dataValues = Object.values(currencyCategoryTotals);
 
             if (chartInstance) chartInstance.destroy();
 
@@ -1084,15 +1384,22 @@
                 chartInstance = new Chart(ctx, {
                     type: 'doughnut',
                     data: {
-                        labels: ['Sin gastos registrados'],
-                        datasets: [{ data: [1], backgroundColor: ['#E5E7EB'] }]
+                        labels: [`Sin gastos en ${selectedChartCurrency}`],
+                        datasets: [{ data: [1], backgroundColor: [isDarkMode ? '#374151' : '#E5E7EB'], borderWidth: 0 }]
                     },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: isDarkMode ? '#CBD5E1' : '#374151' } } } }
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { color: isDarkMode ? '#CBD5E1' : '#6B7280' } },
+                            tooltip: { enabled: false }
+                        }
+                    }
                 });
                 return;
             }
 
-            const backgroundColors = ['#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316', '#6366F1', '#84CC16'];
+            const backgroundColors = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316', '#6366F1', '#84CC16'];
 
             chartInstance = new Chart(ctx, {
                 type: 'doughnut',
@@ -1100,21 +1407,23 @@
                     labels: labels,
                     datasets: [{
                         data: dataValues,
-                        backgroundColor: backgroundColors.slice(0, labels.length)
+                        backgroundColor: backgroundColors.slice(0, labels.length),
+                        borderColor: isDarkMode ? '#1F2937' : '#FFFFFF',
+                        borderWidth: 2
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { position: 'bottom', labels: { color: isDarkMode ? '#CBD5E1' : '#374151' } },
+                        legend: { position: 'bottom', labels: { color: isDarkMode ? '#CBD5E1' : '#374151', boxWidth: 12, padding: 14 } },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
                                     const cat = context.label;
-                                    const pct = ((flatCategoryTotals[cat] / grandTotal) * 100).toFixed(1);
-                                    const breakdown = formatCurrencyGroup(categoryTotalsByCurr[cat] || {});
-                                    return ` ${cat}: ${breakdown} (${pct}%)`;
+                                    const val = currencyCategoryTotals[cat] || 0;
+                                    const pct = ((val / grandTotal) * 100).toFixed(1);
+                                    return ` ${cat}: ${selectedChartCurrency} ${val.toFixed(2)} (${pct}%)`;
                                 }
                             }
                         }
@@ -1133,6 +1442,10 @@
             let totalExpenseDict = { 'S/': 0, '$': 0, '€': 0 };
             let monthlyData = {};
             let categoryTotalsByCurr = {};
+
+            if (transactions.length === 0) {
+                list.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-gray-500 dark:text-gray-400 italic">Aún no has registrado movimientos.</td></tr>`;
+            }
 
             transactions.forEach(t => {
                 const curr = t.currency || 'S/';
@@ -1171,7 +1484,7 @@
                 const row = document.createElement('tr');
                 row.className = "hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors";
                 row.innerHTML = `
-                    <td class="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">${t.date}</td>
+                    <td class="py-3 px-4 text-gray-700 dark:text-gray-300 whitespace-nowrap">${t.date}</td>
                     <td class="py-3 px-4 font-medium text-gray-800 dark:text-gray-200">
                         ${escapeHtml(t.description)}
                         ${isQuotaTx ? '<span class="ml-1 bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold px-2 py-0.5 rounded-full">💳 Cuota</span>' : ''}
@@ -1182,7 +1495,7 @@
                         </select>
                     </td>
                     <td class="py-3 px-4">
-                        <select onchange="updatePaymentMethod(${t.id}, this.value)" class="text-xs p-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium focus:outline-none focus:border-blue-500 cursor-pointer">
+                        <select onchange="updatePaymentMethod(${t.id}, this.value)" class="text-xs p-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium focus:outline-none focus:border-blue-500 cursor-pointer">
                             <option value="Yape / Plin" ${currentMethod === 'Yape / Plin' ? 'selected' : ''}>Yape / Plin</option>
                             <option value="Transferencia" ${currentMethod === 'Transferencia' ? 'selected' : ''}>Transferencia</option>
                             <option value="Tarjeta de Crédito" ${currentMethod === 'Tarjeta de Crédito' ? 'selected' : ''}>Tarjeta de Crédito</option>
@@ -1190,11 +1503,11 @@
                             <option value="Efectivo" ${currentMethod === 'Efectivo' ? 'selected' : ''}>Efectivo</option>
                         </select>
                     </td>
-                    <td class="py-3 px-4 font-bold ${isIncome ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">
+                    <td class="py-3 px-4 font-bold whitespace-nowrap ${isIncome ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">
                         ${isIncome ? '+' : '-'}${curr} ${t.amount.toFixed(2)}
                     </td>
-                    <td class="py-3 px-4">
-                        <button onclick="deleteTransaction(${t.id})" class="text-red-500 hover:text-white hover:bg-red-500 border border-red-500 font-bold px-2 py-1 rounded transition-colors">X</button>
+                    <td class="py-3 px-4 text-center">
+                        <button onclick="deleteTransaction(${t.id})" class="text-red-500 hover:text-white hover:bg-red-500 border border-red-400 font-bold px-2 py-0.5 rounded-lg text-xs transition-colors">✕</button>
                     </td>
                 `;
                 list.appendChild(row);
@@ -1219,7 +1532,7 @@
                         <th class="py-3 px-4 font-semibold">Mes y Año</th>
                         <th class="py-3 px-4 font-semibold text-green-600 dark:text-green-400">Total Ingresos</th>
                         <th class="py-3 px-4 font-semibold text-red-600 dark:text-red-400">Total Gastos</th>
-                        <th class="py-3 px-4 font-semibold text-blue-600 dark:text-blue-400">Balance por Moneda</th>
+                        <th class="py-3 px-4 font-semibold text-blue-600 dark:text-blue-400">Balance</th>
                     </tr>
                 `;
 
