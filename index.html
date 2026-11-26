@@ -382,6 +382,15 @@
         const monthFilterContainer = document.getElementById('month-filter-container');
         const billForm = document.getElementById('bill-reminder-form');
 
+        function escapeHtml(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         // Ordenar por fecha (más reciente primero) y, en el mismo día, el último agregado encima (mayor id primero)
         function sortTransactions() {
             transactions.sort((a, b) => {
@@ -719,8 +728,8 @@
                 card.innerHTML = `
                     <div class="flex justify-between items-start gap-2 mb-2">
                         <div>
-                            <h4 class="font-bold text-gray-900 dark:text-white text-base">${plan.description}</h4>
-                            <span class="text-xs text-gray-500 dark:text-gray-400">${plan.category} • ${plan.paymentMethod}</span>
+                            <h4 class="font-bold text-gray-900 dark:text-white text-base">${escapeHtml(plan.description)}</h4>
+                            <span class="text-xs text-gray-500 dark:text-gray-400">${escapeHtml(plan.category)} • ${escapeHtml(plan.paymentMethod)}</span>
                         </div>
                         <div class="flex items-center gap-2">
                             ${alertTag}
@@ -844,8 +853,8 @@
                 row.className = "hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors";
                 row.innerHTML = `
                     <td class="py-3 px-4 font-bold text-gray-800 dark:text-gray-200">
-                        ${b.name} 
-                        <span class="text-xs text-gray-400 block font-normal">${b.category}</span>
+                        ${escapeHtml(b.name)} 
+                        <span class="text-xs text-gray-400 block font-normal">${escapeHtml(b.category)}</span>
                     </td>
                     <td class="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">${b.dueDate}</td>
                     <td class="py-3 px-4">${statusBadge}</td>
@@ -923,11 +932,40 @@
             }
         }
 
+        // Actualizar Categoría desde el historial y sincronizar gráficos, presupuestos y planes de cuotas
+        function updateCategory(id, newCategory) {
+            const transaction = transactions.find(t => t.id === id);
+            if (transaction) {
+                transaction.category = newCategory;
+                localStorage.setItem('transactions', JSON.stringify(transactions));
+
+                if (transaction.installmentPlanId) {
+                    const plan = installmentPlans.find(p => p.id === transaction.installmentPlanId);
+                    if (plan) {
+                        plan.category = newCategory;
+                        localStorage.setItem('installmentPlans', JSON.stringify(installmentPlans));
+                    }
+                }
+
+                checkBudgetAlerts(transaction);
+                updateUI();
+            }
+        }
+
         function updatePaymentMethod(id, newMethod) {
             const transaction = transactions.find(t => t.id === id);
             if (transaction) {
                 transaction.paymentMethod = newMethod;
                 localStorage.setItem('transactions', JSON.stringify(transactions));
+
+                if (transaction.installmentPlanId) {
+                    const plan = installmentPlans.find(p => p.id === transaction.installmentPlanId);
+                    if (plan) {
+                        plan.paymentMethod = newMethod;
+                        localStorage.setItem('installmentPlans', JSON.stringify(installmentPlans));
+                    }
+                }
+
                 updateUI();
             }
         }
@@ -1012,7 +1050,7 @@
                 card.className = "bg-gray-50 dark:bg-gray-700/40 p-4 rounded-lg border border-gray-200 dark:border-gray-600";
                 card.innerHTML = `
                     <div class="flex justify-between items-center mb-2">
-                        <span class="font-bold text-gray-800 dark:text-gray-200 text-sm">${cat}</span>
+                        <span class="font-bold text-gray-800 dark:text-gray-200 text-sm">${escapeHtml(cat)}</span>
                         <span class="text-xs ${textColor}">${bObj.currency} ${spent.toFixed(2)} / ${bObj.currency} ${bObj.amount.toFixed(2)} (${pct.toFixed(0)}%)</span>
                     </div>
                     <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-3 overflow-hidden">
@@ -1122,17 +1160,27 @@
 
                 const isIncome = t.type === 'income';
                 const currentMethod = t.paymentMethod || 'Yape / Plin';
+                const currentCat = t.category || 'Otros';
                 const isQuotaTx = Boolean(t.installmentPlanId);
+
+                const availableCats = categories.includes(currentCat) ? categories : [...categories, currentCat];
+                const categoryOptionsHtml = availableCats.map(cat => 
+                    `<option value="${escapeHtml(cat)}" ${cat === currentCat ? 'selected' : ''}>${escapeHtml(cat)}</option>`
+                ).join('');
 
                 const row = document.createElement('tr');
                 row.className = "hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors";
                 row.innerHTML = `
                     <td class="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">${t.date}</td>
                     <td class="py-3 px-4 font-medium text-gray-800 dark:text-gray-200">
-                        ${t.description}
+                        ${escapeHtml(t.description)}
                         ${isQuotaTx ? '<span class="ml-1 bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold px-2 py-0.5 rounded-full">💳 Cuota</span>' : ''}
                     </td>
-                    <td class="py-3 px-4"><span class="bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 py-1 px-2 rounded-full text-xs font-semibold">${t.category}</span></td>
+                    <td class="py-3 px-4">
+                        <select onchange="updateCategory(${t.id}, this.value)" class="text-xs py-1 px-2.5 border border-blue-200 dark:border-blue-800 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 font-semibold focus:outline-none focus:border-blue-500 cursor-pointer">
+                            ${categoryOptionsHtml}
+                        </select>
+                    </td>
                     <td class="py-3 px-4">
                         <select onchange="updatePaymentMethod(${t.id}, this.value)" class="text-xs p-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium focus:outline-none focus:border-blue-500 cursor-pointer">
                             <option value="Yape / Plin" ${currentMethod === 'Yape / Plin' ? 'selected' : ''}>Yape / Plin</option>
@@ -1232,7 +1280,7 @@
                         row.className = "hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors";
                         row.innerHTML = `
                             <td class="py-3 px-4 font-bold text-gray-800 dark:text-gray-200">
-                                <span class="bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 py-1 px-3 rounded-full text-xs">${cat}</span>
+                                <span class="bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 py-1 px-3 rounded-full text-xs">${escapeHtml(cat)}</span>
                             </td>
                             <td class="py-3 px-4 text-red-600 dark:text-red-400 font-bold">${formatCurrencyGroup(filteredCategoryTotals[cat])}</td>
                         `;
@@ -1274,7 +1322,7 @@
                         row.className = "hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors";
                         row.innerHTML = `
                             <td class="py-3 px-4 font-bold text-gray-800 dark:text-gray-200">
-                                <span class="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 py-1 px-3 rounded-full text-xs border border-gray-300 dark:border-gray-600">${pm}</span>
+                                <span class="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 py-1 px-3 rounded-full text-xs border border-gray-300 dark:border-gray-600">${escapeHtml(pm)}</span>
                             </td>
                             <td class="py-3 px-4 text-red-600 dark:text-red-400 font-bold">${formatCurrencyGroup(filteredPMTotals[pm])}</td>
                         `;
