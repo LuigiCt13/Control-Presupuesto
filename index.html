@@ -22,7 +22,7 @@
         <div class="mb-8 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md flex flex-col md:flex-row justify-between items-center gap-4 transition-colors">
             <div class="text-center md:text-left">
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Mi Control de Presupuesto Multi-Moneda</h1>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Registra tus gastos, programa tus vencimientos y controla tu dinero.</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Registra tus gastos, controla tus compras en cuotas y programa tus vencimientos.</p>
             </div>
             <button onclick="toggleDarkMode()" id="dark-mode-btn" class="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-2 px-4 rounded-lg text-sm border border-gray-300 dark:border-gray-600 transition-colors">
                 🌙 Modo Oscuro
@@ -36,12 +36,150 @@
                 <div id="total-income" class="text-lg md:text-xl font-bold text-green-600 dark:text-green-400 mt-2 space-y-1">S/ 0.00</div>
             </div>
             <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-red-500 transition-colors">
-                <h3 class="text-gray-500 dark:text-gray-400 text-sm font-semibold uppercase tracking-wider">Gastos Totales</h3>
+                <h3 class="text-gray-500 dark:text-gray-400 text-sm font-semibold uppercase tracking-wider">Gastos Totales (Ejecutados)</h3>
                 <div id="total-expense" class="text-lg md:text-xl font-bold text-red-600 dark:text-red-400 mt-2 space-y-1">S/ 0.00</div>
             </div>
             <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-blue-500 transition-colors">
-                <h3 class="text-gray-500 dark:text-gray-400 text-sm font-semibold uppercase tracking-wider">Balance por Moneda</h3>
+                <h3 class="text-gray-500 dark:text-gray-400 text-sm font-semibold uppercase tracking-wider">Balance Disponible</h3>
                 <div id="total-balance" class="text-lg md:text-xl font-bold text-blue-600 dark:text-blue-400 mt-2 space-y-1">S/ 0.00</div>
+            </div>
+        </div>
+
+        <!-- Formularios y Configuración de Categorías (Prioridad Alta) -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            
+            <!-- Formulario Registrar Movimiento + Opción en Cuotas -->
+            <div class="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md transition-colors">
+                <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Registrar Movimiento o Compra en Cuotas</h3>
+                <form id="transaction-form" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1" id="date-label">Fecha de Registro / Pago de esta Cuota</label>
+                            <input type="date" id="date" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Tipo de Movimiento</label>
+                            <select id="type" onchange="toggleInstallmentAvailability()" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-blue-500">
+                                <option value="expense">Gasto / Compra (Egreso)</option>
+                                <option value="income">Ingreso</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Descripción</label>
+                        <input type="text" id="description" placeholder="Ej. Refrigeradora, Zapatillas, Supermercado" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-blue-500">
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1" id="amount-label">Monto Total</label>
+                            <input type="number" id="amount" oninput="updateInstallmentPreview()" placeholder="Ej. 600.00" step="0.01" min="0.01" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Moneda</label>
+                            <select id="currency" onchange="updateInstallmentPreview()" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded font-bold text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-700 focus:outline-none focus:border-blue-500">
+                                <option value="S/">Soles (S/)</option>
+                                <option value="$">Dólares ($)</option>
+                                <option value="€">Euros (€)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Método de Pago</label>
+                            <select id="payment-method" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-blue-500">
+                                <option value="Tarjeta de Crédito">Tarjeta de Crédito (TC)</option>
+                                <option value="Yape / Plin">Yape / Plin</option>
+                                <option value="Transferencia">Transferencia Bancaria</option>
+                                <option value="Tarjeta de Débito">Tarjeta de Débito</option>
+                                <option value="Efectivo">Efectivo</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Categoría</label>
+                            <select id="category" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-blue-500">
+                                <!-- Categorías por JS -->
+                            </select>
+                        </div>
+
+                        <!-- Selector de Modalidad (Al contado vs Cuotas) -->
+                        <div id="installment-toggle-wrapper">
+                            <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">¿Pago en Cuotas sin Intereses?</label>
+                            <select id="is-installment" onchange="toggleInstallmentFields()" class="w-full p-2 border border-indigo-300 dark:border-indigo-600 rounded bg-indigo-50/50 dark:bg-gray-700 text-indigo-900 dark:text-indigo-300 font-semibold focus:outline-none focus:border-indigo-500">
+                                <option value="no">No (Pago único / Al contado)</option>
+                                <option value="yes">💳 Sí, dividir en cuotas mensuales</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Caja Desplegable de Configuración de Cuotas (Nuevas o Ya Iniciadas) -->
+                    <div id="installment-details-box" class="hidden bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-xl border border-indigo-200 dark:border-indigo-800 space-y-3">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                            <div>
+                                <label class="block text-xs font-bold text-indigo-900 dark:text-indigo-300 mb-1">Total de Cuotas</label>
+                                <input type="number" id="installment-count" oninput="syncInstallmentInputs()" value="3" min="2" max="60" step="1" class="w-full p-2 border border-indigo-300 dark:border-indigo-700 rounded bg-white dark:bg-gray-800 dark:text-white font-bold">
+                                <span class="text-[11px] text-gray-500 dark:text-gray-400">Ej. 3, 6, 12 meses</span>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-indigo-900 dark:text-indigo-300 mb-1">¿Qué cuota pagas este mes?</label>
+                                <input type="number" id="installment-current" oninput="updateInstallmentPreview()" value="1" min="1" max="60" step="1" class="w-full p-2 border border-indigo-300 dark:border-indigo-700 rounded bg-white dark:bg-gray-800 dark:text-white font-bold">
+                                <span class="text-[11px] text-gray-500 dark:text-gray-400">Pon <b>2</b> si el mes pasado pagaste la 1</span>
+                            </div>
+                            <div class="bg-white dark:bg-gray-800 p-3 rounded-lg border border-indigo-100 dark:border-indigo-800/60">
+                                <span class="text-xs text-gray-500 dark:text-gray-400 block">Cuota mensual:</span>
+                                <span id="installment-preview-text" class="text-base font-extrabold text-indigo-600 dark:text-indigo-400">S/ 0.00 / mes</span>
+                                <span id="installment-helper-text" class="text-[11px] text-gray-500 dark:text-gray-400 block mt-0.5">Se registrará hoy la <b>Cuota 1/3</b> y quedarán 2 pendientes.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200">
+                        Añadir Registro
+                    </button>
+                </form>
+            </div>
+
+            <!-- Crear Categoría y Asignar Presupuesto -->
+            <div class="space-y-6">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md transition-colors">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-2">Categoría y Presupuesto</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Crea categorías y asigna un tope mensual de gasto.</p>
+                    <div class="space-y-3">
+                        <input type="text" id="new-category" placeholder="Ej. Restaurantes, Electrodomésticos" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-blue-500">
+                        <div class="flex gap-2">
+                            <input type="number" id="new-budget" placeholder="Límite mensual (opcional)" min="0" step="10" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-blue-500">
+                            <select id="new-budget-currency" class="p-2 border border-gray-300 dark:border-gray-600 rounded text-sm font-bold text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-700">
+                                <option value="S/">S/</option>
+                                <option value="$">$</option>
+                                <option value="€">€</option>
+                            </select>
+                        </div>
+                        <button onclick="addCategory()" class="w-full bg-gray-800 dark:bg-gray-700 hover:bg-gray-900 dark:hover:bg-gray-600 text-white font-bold py-2 rounded-lg transition duration-200">
+                            Guardar Categoría
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PANEL: SEGUIMIENTO Y RECORDATORIO DE COMPRAS EN CUOTAS -->
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md mb-8 border-t-4 border-indigo-500 transition-colors">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-gray-100 dark:border-gray-700 pb-4">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                        💳 Seguimiento de Compras en Cuotas
+                    </h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Revisa en qué cuota vas, cuánto te falta pagar y registra la cuota de cada mes con un clic.</p>
+                </div>
+                <div id="installments-summary-badge" class="text-xs font-bold bg-indigo-100 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-300 px-3 py-1.5 rounded-full">
+                    0 compras activas
+                </div>
+            </div>
+
+            <div id="installments-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Tarjetas de cuotas generadas por JS -->
             </div>
         </div>
 
@@ -52,7 +190,7 @@
                     <h3 class="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
                         ⏰ Recordatorio de Vencimientos y Servicios Fijos
                     </h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Programa tus pagos de luz, agua, internet o celular para evitar moras.</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Programa tus pagos de luz, agua, internet o tarjeta para evitar moras.</p>
                 </div>
             </div>
 
@@ -102,93 +240,6 @@
                     </thead>
                     <tbody id="bills-list" class="divide-y divide-gray-100 dark:divide-gray-700"></tbody>
                 </table>
-            </div>
-        </div>
-
-        <!-- Formularios y Configuración de Categorías -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-            
-            <!-- Formulario Registrar Movimiento -->
-            <div class="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md transition-colors">
-                <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Registrar Movimiento</h3>
-                <form id="transaction-form" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Fecha</label>
-                            <input type="date" id="date" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Tipo de Movimiento</label>
-                            <select id="type" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-blue-500">
-                                <option value="expense">Gasto (Egreso)</option>
-                                <option value="income">Ingreso</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Descripción</label>
-                        <input type="text" id="description" placeholder="Ej. Compra en supermercado, Pago de alquiler" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-blue-500">
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Monto</label>
-                            <input type="number" id="amount" placeholder="Ej. 150.50" step="0.01" min="0.01" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Moneda</label>
-                            <select id="currency" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded font-bold text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-700 focus:outline-none focus:border-blue-500">
-                                <option value="S/">Soles (S/)</option>
-                                <option value="$">Dólares ($)</option>
-                                <option value="€">Euros (€)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Método de Pago</label>
-                            <select id="payment-method" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-blue-500">
-                                <option value="Yape / Plin">Yape / Plin</option>
-                                <option value="Transferencia">Transferencia Bancaria</option>
-                                <option value="Tarjeta de Crédito">Tarjeta de Crédito (TC)</option>
-                                <option value="Tarjeta de Débito">Tarjeta de Débito</option>
-                                <option value="Efectivo">Efectivo</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Categoría</label>
-                        <select id="category" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-blue-500">
-                            <!-- Categorías por JS -->
-                        </select>
-                    </div>
-
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200">
-                        Añadir Registro
-                    </button>
-                </form>
-            </div>
-
-            <!-- Crear Categoría y Asignar Presupuesto -->
-            <div class="space-y-6">
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md transition-colors">
-                    <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-2">Categoría y Presupuesto</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Crea categorías y asigna un tope mensual de gasto.</p>
-                    <div class="space-y-3">
-                        <input type="text" id="new-category" placeholder="Ej. Restaurantes, Salud" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-blue-500">
-                        <div class="flex gap-2">
-                            <input type="number" id="new-budget" placeholder="Límite mensual (opcional)" min="0" step="10" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-blue-500">
-                            <select id="new-budget-currency" class="p-2 border border-gray-300 dark:border-gray-600 rounded text-sm font-bold text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-700">
-                                <option value="S/">S/</option>
-                                <option value="$">$</option>
-                                <option value="€">€</option>
-                            </select>
-                        </div>
-                        <button onclick="addCategory()" class="w-full bg-gray-800 dark:bg-gray-700 hover:bg-gray-900 dark:hover:bg-gray-600 text-white font-bold py-2 rounded-lg transition duration-200">
-                            Guardar Categoría
-                        </button>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -309,13 +360,14 @@
         applyDarkMode();
 
         let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
-        let defaultCategories = ['Comida', 'Transporte', 'Entretenimiento', 'Servicios', 'Salario', 'Otros'];
+        let defaultCategories = ['Comida', 'Transporte', 'Entretenimiento', 'Servicios', 'Tecnología / Hogar', 'Salario', 'Otros'];
         let categories = JSON.parse(localStorage.getItem('categories')) || defaultCategories;
         let categoryBudgets = JSON.parse(localStorage.getItem('categoryBudgets')) || {
             'Comida': { amount: 500, currency: 'S/' },
             'Entretenimiento': { amount: 300, currency: 'S/' }
         };
         let fixedBills = JSON.parse(localStorage.getItem('fixedBills')) || [];
+        let installmentPlans = JSON.parse(localStorage.getItem('installmentPlans')) || [];
 
         let chartInstance = null;
 
@@ -336,6 +388,80 @@
             updateUI();
         }
 
+        // Lógica de interfaz para Cuotas (Nuevas o Ya Iniciadas)
+        function toggleInstallmentAvailability() {
+            const type = document.getElementById('type').value;
+            const wrapper = document.getElementById('installment-toggle-wrapper');
+            const isInstSelect = document.getElementById('is-installment');
+            if (type === 'income') {
+                wrapper.classList.add('hidden');
+                isInstSelect.value = 'no';
+                toggleInstallmentFields();
+            } else {
+                wrapper.classList.remove('hidden');
+            }
+        }
+
+        function toggleInstallmentFields() {
+            const isInst = document.getElementById('is-installment').value === 'yes';
+            const box = document.getElementById('installment-details-box');
+            const amtLabel = document.getElementById('amount-label');
+            if (isInst) {
+                box.classList.remove('hidden');
+                amtLabel.textContent = 'Monto Total Original de la Compra';
+                updateInstallmentPreview();
+            } else {
+                box.classList.add('hidden');
+                amtLabel.textContent = 'Monto';
+            }
+        }
+
+        function syncInstallmentInputs() {
+            const countInput = document.getElementById('installment-count');
+            const currentInput = document.getElementById('installment-current');
+            const total = parseInt(countInput.value) || 2;
+            currentInput.max = total;
+            if (parseInt(currentInput.value) > total) {
+                currentInput.value = total;
+            }
+            updateInstallmentPreview();
+        }
+
+        function updateInstallmentPreview() {
+            const total = parseFloat(document.getElementById('amount').value) || 0;
+            const count = parseInt(document.getElementById('installment-count').value) || 2;
+            let current = parseInt(document.getElementById('installment-current').value) || 1;
+            if (current < 1) current = 1;
+            if (current > count) current = count;
+
+            const curr = document.getElementById('currency').value;
+            const monthly = count > 0 ? (total / count) : 0;
+            const remainingAfterToday = Math.max(count - current, 0);
+
+            document.getElementById('installment-preview-text').textContent = `${curr} ${monthly.toFixed(2)} / mes`;
+            const helperEl = document.getElementById('installment-helper-text');
+            if (remainingAfterToday === 0) {
+                helperEl.innerHTML = `Se registrará la <b>última cuota (${current}/${count})</b> y quedará liquidada.`;
+            } else {
+                helperEl.innerHTML = `Hoy se suma la <b>Cuota ${current}/${count}</b> y quedarán <b>${remainingAfterToday}</b> pendientes.`;
+            }
+        }
+
+        // Sumar meses respetando fin de mes
+        function addMonthsToDate(dateStr, monthsToAdd) {
+            const parts = dateStr.split('-').map(Number);
+            const targetMonth = parts[1] - 1 + monthsToAdd;
+            const date = new Date(parts[0], targetMonth, parts[2]);
+            // Evitar salto de mes (ej. 31 enero + 1 mes -> 28 feb)
+            if (date.getMonth() !== ((targetMonth % 12) + 12) % 12) {
+                date.setDate(0);
+            }
+            const yyyy = date.getFullYear();
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            const dd = String(date.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
         function updateCategoriesSelect() {
             categorySelect.innerHTML = '';
             billCategorySelect.innerHTML = '';
@@ -350,7 +476,9 @@
                 option2.textContent = category;
                 billCategorySelect.appendChild(option2);
             });
-            billCategorySelect.value = 'Servicios';
+            if (categories.includes('Servicios')) {
+                billCategorySelect.value = 'Servicios';
+            }
         }
 
         function addCategory() {
@@ -376,6 +504,244 @@
                 alert(`¡Categoría "${newCatValue}" configurada!`);
                 updateUI();
             }
+        }
+
+        // Registro de Movimientos (Normales y en Cuotas nuevas o ya empezadas)
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const dateVal = document.getElementById('date').value;
+            const descVal = document.getElementById('description').value.trim();
+            const totalAmount = parseFloat(document.getElementById('amount').value);
+            const currVal = document.getElementById('currency').value;
+            const typeVal = document.getElementById('type').value;
+            const pmVal = document.getElementById('payment-method').value;
+            const catVal = document.getElementById('category').value;
+            const isInstallment = typeVal === 'expense' && document.getElementById('is-installment').value === 'yes';
+
+            if (isInstallment) {
+                const totalInstallments = parseInt(document.getElementById('installment-count').value);
+                const currentQuota = parseInt(document.getElementById('installment-current').value) || 1;
+
+                if (!totalInstallments || totalInstallments < 2) {
+                    alert('El total de cuotas debe ser de al menos 2 meses.');
+                    return;
+                }
+                if (currentQuota < 1 || currentQuota > totalInstallments) {
+                    alert(`El número de cuota actual debe estar entre 1 y ${totalInstallments}.`);
+                    return;
+                }
+
+                const baseMonthlyQuota = parseFloat((totalAmount / totalInstallments).toFixed(2));
+                // Ajuste de centavos si está registrando directamente la última cuota
+                let quotaThisMonth = baseMonthlyQuota;
+                if (currentQuota === totalInstallments) {
+                    quotaThisMonth = parseFloat((totalAmount - baseMonthlyQuota * (totalInstallments - 1)).toFixed(2));
+                }
+
+                const planId = Date.now();
+
+                // 1. Registrar la cuota que toca este mes en los gastos ejecutados
+                const currentTx = {
+                    id: planId + 1,
+                    date: dateVal,
+                    description: `${descVal} (Cuota ${currentQuota}/${totalInstallments})`,
+                    amount: quotaThisMonth,
+                    currency: currVal,
+                    type: 'expense',
+                    paymentMethod: pmVal,
+                    category: catVal,
+                    installmentPlanId: planId
+                };
+                transactions.push(currentTx);
+                transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+                localStorage.setItem('transactions', JSON.stringify(transactions));
+
+                // 2. Crear el Plan de Cuotas partiendo desde la cuota actual (ej. 2 de 6 pagadas)
+                const newPlan = {
+                    id: planId,
+                    description: descVal,
+                    totalAmount: totalAmount,
+                    installmentAmount: baseMonthlyQuota,
+                    currency: currVal,
+                    totalInstallments: totalInstallments,
+                    paidInstallments: currentQuota,
+                    startDate: dateVal,
+                    nextDueDate: addMonthsToDate(dateVal, 1),
+                    paymentMethod: pmVal,
+                    category: catVal
+                };
+                installmentPlans.push(newPlan);
+                localStorage.setItem('installmentPlans', JSON.stringify(installmentPlans));
+
+                const pendingCount = totalInstallments - currentQuota;
+                alert(`💳 ¡Compra en cuotas registrada!\n\n• Se agregó "${descVal} (Cuota ${currentQuota}/${totalInstallments})" por ${currVal} ${quotaThisMonth.toFixed(2)} a tus gastos del mes.\n• ${pendingCount > 0 ? `Quedan ${pendingCount} cuotas programadas en tu panel de seguimiento.` : '¡Con esta cuota tu compra quedó completada!'}`);
+                checkBudgetAlerts(currentTx);
+            } else {
+                const transaction = {
+                    id: Date.now(),
+                    date: dateVal,
+                    description: descVal,
+                    amount: totalAmount,
+                    currency: currVal,
+                    type: typeVal,
+                    paymentMethod: pmVal,
+                    category: catVal
+                };
+                transactions.push(transaction);
+                transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+                localStorage.setItem('transactions', JSON.stringify(transactions));
+                checkBudgetAlerts(transaction);
+            }
+
+            // Limpiar formulario
+            document.getElementById('description').value = '';
+            document.getElementById('amount').value = '';
+            document.getElementById('is-installment').value = 'no';
+            document.getElementById('installment-current').value = '1';
+            toggleInstallmentFields();
+
+            populateMonthFilterOptions();
+            updateUI();
+        });
+
+        // Pagar la siguiente cuota de un plan
+        function payNextInstallment(planId) {
+            const plan = installmentPlans.find(p => p.id === planId);
+            if (!plan || plan.paidInstallments >= plan.totalInstallments) return;
+
+            const nextQuotaNum = plan.paidInstallments + 1;
+            const paymentDate = plan.nextDueDate || new Date().toISOString().split('T')[0];
+
+            let amountToPay = plan.installmentAmount;
+            if (nextQuotaNum === plan.totalInstallments) {
+                const alreadyPaid = plan.installmentAmount * plan.paidInstallments;
+                amountToPay = parseFloat((plan.totalAmount - alreadyPaid).toFixed(2));
+            }
+
+            const tx = {
+                id: Date.now(),
+                date: paymentDate,
+                description: `${plan.description} (Cuota ${nextQuotaNum}/${plan.totalInstallments})`,
+                amount: amountToPay,
+                currency: plan.currency,
+                type: 'expense',
+                paymentMethod: plan.paymentMethod,
+                category: plan.category,
+                installmentPlanId: plan.id
+            };
+
+            transactions.push(tx);
+            transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+            localStorage.setItem('transactions', JSON.stringify(transactions));
+
+            plan.paidInstallments = nextQuotaNum;
+            if (plan.paidInstallments < plan.totalInstallments) {
+                plan.nextDueDate = addMonthsToDate(paymentDate, 1);
+            }
+            localStorage.setItem('installmentPlans', JSON.stringify(installmentPlans));
+
+            populateMonthFilterOptions();
+            checkBudgetAlerts(tx);
+            updateUI();
+
+            if (plan.paidInstallments === plan.totalInstallments) {
+                alert(`🎉 ¡Felicidades! Has terminado de pagar todas las cuotas (${plan.totalInstallments}/${plan.totalInstallments}) de "${plan.description}".`);
+            } else {
+                alert(`✅ Se registró la Cuota ${nextQuotaNum}/${plan.totalInstallments} de "${plan.description}" (${plan.currency} ${amountToPay.toFixed(2)}) en tus gastos.`);
+            }
+        }
+
+        function deleteInstallmentPlan(planId) {
+            if (confirm("¿Deseas eliminar el seguimiento de este plan de cuotas? (Las cuotas que ya registraste en tu historial de gastos se mantendrán).")) {
+                installmentPlans = installmentPlans.filter(p => p.id !== planId);
+                localStorage.setItem('installmentPlans', JSON.stringify(installmentPlans));
+                updateUI();
+            }
+        }
+
+        function renderInstallmentPlans() {
+            const container = document.getElementById('installments-container');
+            const badge = document.getElementById('installments-summary-badge');
+            container.innerHTML = '';
+
+            const activeCount = installmentPlans.filter(p => p.paidInstallments < p.totalInstallments).length;
+            badge.textContent = `${activeCount} ${activeCount === 1 ? 'compra activa' : 'compras activas'}`;
+
+            if (installmentPlans.length === 0) {
+                container.innerHTML = `<div class="col-span-2 py-6 text-center text-gray-500 dark:text-gray-400 italic bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">No tienes compras en cuotas registradas. Al añadir un gasto, elige "Sí, dividir en cuotas mensuales" para hacerle seguimiento aquí.</div>`;
+                return;
+            }
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const sortedPlans = [...installmentPlans].sort((a, b) => {
+                const aDone = a.paidInstallments >= a.totalInstallments;
+                const bDone = b.paidInstallments >= b.totalInstallments;
+                if (aDone !== bDone) return aDone ? 1 : -1;
+                return new Date(a.nextDueDate) - new Date(b.nextDueDate);
+            });
+
+            sortedPlans.forEach(plan => {
+                const isCompleted = plan.paidInstallments >= plan.totalInstallments;
+                const pct = Math.min((plan.paidInstallments / plan.totalInstallments) * 100, 100);
+                const remainingCount = plan.totalInstallments - plan.paidInstallments;
+                const paidAmount = Math.min(plan.paidInstallments * plan.installmentAmount, plan.totalAmount);
+                const remainingAmount = Math.max(plan.totalAmount - paidAmount, 0);
+
+                let alertTag = '';
+                if (isCompleted) {
+                    alertTag = `<span class="bg-green-100 text-green-800 dark:bg-green-900/60 dark:text-green-300 text-xs font-bold px-2.5 py-1 rounded-full">✅ COMPLETADO (${plan.totalInstallments}/${plan.totalInstallments})</span>`;
+                } else {
+                    const dueObj = new Date(plan.nextDueDate + 'T00:00:00');
+                    const diffDays = Math.ceil((dueObj - today) / (1000 * 60 * 60 * 24));
+
+                    if (diffDays < 0) {
+                        alertTag = `<span class="bg-red-100 text-red-800 dark:bg-red-900/60 dark:text-red-300 text-xs font-bold px-2.5 py-1 rounded-full">🚨 Cuota ${plan.paidInstallments + 1} vencida hace ${Math.abs(diffDays)}d</span>`;
+                    } else if (diffDays <= 7) {
+                        alertTag = `<span class="bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300 text-xs font-bold px-2.5 py-1 rounded-full">⚠️ Cuota ${plan.paidInstallments + 1} vence en ${diffDays}d</span>`;
+                    } else {
+                        alertTag = `<span class="bg-indigo-100 text-indigo-800 dark:bg-indigo-900/60 dark:text-indigo-300 text-xs font-semibold px-2.5 py-1 rounded-full">📅 Próxima cuota: ${plan.nextDueDate}</span>`;
+                    }
+                }
+
+                const card = document.createElement('div');
+                card.className = `p-4 rounded-xl border transition-colors ${isCompleted ? 'bg-gray-50/70 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 opacity-80' : 'bg-indigo-50/30 dark:bg-gray-700/40 border-indigo-200 dark:border-indigo-800/60'}`;
+                card.innerHTML = `
+                    <div class="flex justify-between items-start gap-2 mb-2">
+                        <div>
+                            <h4 class="font-bold text-gray-900 dark:text-white text-base">${plan.description}</h4>
+                            <span class="text-xs text-gray-500 dark:text-gray-400">${plan.category} • ${plan.paymentMethod}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            ${alertTag}
+                            <button onclick="deleteInstallmentPlan(${plan.id})" title="Eliminar seguimiento" class="text-gray-400 hover:text-red-500 font-bold text-xs px-1.5 py-0.5">✕</button>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center text-xs font-semibold text-gray-700 dark:text-gray-300 mt-3 mb-1">
+                        <span>Vas en la <b>Cuota ${plan.paidInstallments} de ${plan.totalInstallments}</b></span>
+                        <span class="text-indigo-600 dark:text-indigo-400 font-bold">${plan.currency} ${plan.installmentAmount.toFixed(2)} / mes</span>
+                    </div>
+
+                    <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2.5 overflow-hidden mb-3">
+                        <div class="${isCompleted ? 'bg-green-500' : 'bg-indigo-600'} h-2.5 rounded-full transition-all duration-300" style="width: ${pct}%"></div>
+                    </div>
+
+                    <div class="flex flex-wrap justify-between items-center gap-2 pt-2 border-t border-gray-200/70 dark:border-gray-600/60 text-xs">
+                        <div class="text-gray-600 dark:text-gray-300">
+                            Total: <b>${plan.currency} ${plan.totalAmount.toFixed(2)}</b> 
+                            ${!isCompleted ? `• Falta: <b class="text-red-600 dark:text-red-400">${plan.currency} ${remainingAmount.toFixed(2)}</b> (${remainingCount} ${remainingCount === 1 ? 'cuota' : 'cuotas'})` : ''}
+                        </div>
+                        ${!isCompleted ? `
+                            <button onclick="payNextInstallment(${plan.id})" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition-colors shadow-sm">
+                                + Registrar Cuota ${plan.paidInstallments + 1}/${plan.totalInstallments}
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
         }
 
         billForm.addEventListener('submit', function(e) {
@@ -511,31 +877,6 @@
                 summaryMonthFilter.value = currentSelected;
             }
         }
-
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const transaction = {
-                id: Date.now(),
-                date: document.getElementById('date').value,
-                description: document.getElementById('description').value.trim(),
-                amount: parseFloat(document.getElementById('amount').value),
-                currency: document.getElementById('currency').value,
-                type: document.getElementById('type').value,
-                paymentMethod: document.getElementById('payment-method').value,
-                category: document.getElementById('category').value
-            };
-            
-            transactions.push(transaction);
-            transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-            
-            localStorage.setItem('transactions', JSON.stringify(transactions));
-            document.getElementById('description').value = '';
-            document.getElementById('amount').value = '';
-            
-            populateMonthFilterOptions();
-            checkBudgetAlerts(transaction);
-            updateUI();
-        });
 
         function checkBudgetAlerts(newTx) {
             if (newTx.type !== 'expense') return;
@@ -770,11 +1111,16 @@
 
                 const isIncome = t.type === 'income';
                 const currentMethod = t.paymentMethod || 'Yape / Plin';
+                const isQuotaTx = Boolean(t.installmentPlanId);
+
                 const row = document.createElement('tr');
                 row.className = "hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors";
                 row.innerHTML = `
                     <td class="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">${t.date}</td>
-                    <td class="py-3 px-4 font-medium text-gray-800 dark:text-gray-200">${t.description}</td>
+                    <td class="py-3 px-4 font-medium text-gray-800 dark:text-gray-200">
+                        ${t.description}
+                        ${isQuotaTx ? '<span class="ml-1 bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold px-2 py-0.5 rounded-full">💳 Cuota</span>' : ''}
+                    </td>
                     <td class="py-3 px-4"><span class="bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 py-1 px-2 rounded-full text-xs font-semibold">${t.category}</span></td>
                     <td class="py-3 px-4">
                         <select onchange="updatePaymentMethod(${t.id}, this.value)" class="text-xs p-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium focus:outline-none focus:border-blue-500 cursor-pointer">
@@ -926,6 +1272,7 @@
                 }
             }
 
+            renderInstallmentPlans();
             renderBills();
             updateBudgetBars();
             updateChart(categoryTotalsByCurr);
@@ -935,5 +1282,3 @@
     </script>
 </body>
 </html>
-
-
