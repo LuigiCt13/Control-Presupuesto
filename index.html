@@ -382,7 +382,18 @@
         const monthFilterContainer = document.getElementById('month-filter-container');
         const billForm = document.getElementById('bill-reminder-form');
 
+        // Ordenar por fecha (más reciente primero) y, en el mismo día, el último agregado encima (mayor id primero)
+        function sortTransactions() {
+            transactions.sort((a, b) => {
+                if (a.date !== b.date) {
+                    return b.date.localeCompare(a.date);
+                }
+                return (b.id || 0) - (a.id || 0);
+            });
+        }
+
         function init() {
+            sortTransactions();
             updateCategoriesSelect();
             populateMonthFilterOptions();
             updateUI();
@@ -452,7 +463,6 @@
             const parts = dateStr.split('-').map(Number);
             const targetMonth = parts[1] - 1 + monthsToAdd;
             const date = new Date(parts[0], targetMonth, parts[2]);
-            // Evitar salto de mes (ej. 31 enero + 1 mes -> 28 feb)
             if (date.getMonth() !== ((targetMonth % 12) + 12) % 12) {
                 date.setDate(0);
             }
@@ -532,7 +542,6 @@
                 }
 
                 const baseMonthlyQuota = parseFloat((totalAmount / totalInstallments).toFixed(2));
-                // Ajuste de centavos si está registrando directamente la última cuota
                 let quotaThisMonth = baseMonthlyQuota;
                 if (currentQuota === totalInstallments) {
                     quotaThisMonth = parseFloat((totalAmount - baseMonthlyQuota * (totalInstallments - 1)).toFixed(2));
@@ -553,10 +562,10 @@
                     installmentPlanId: planId
                 };
                 transactions.push(currentTx);
-                transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+                sortTransactions();
                 localStorage.setItem('transactions', JSON.stringify(transactions));
 
-                // 2. Crear el Plan de Cuotas partiendo desde la cuota actual (ej. 2 de 6 pagadas)
+                // 2. Crear el Plan de Cuotas partiendo desde la cuota actual
                 const newPlan = {
                     id: planId,
                     description: descVal,
@@ -588,7 +597,7 @@
                     category: catVal
                 };
                 transactions.push(transaction);
-                transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+                sortTransactions();
                 localStorage.setItem('transactions', JSON.stringify(transactions));
                 checkBudgetAlerts(transaction);
             }
@@ -631,7 +640,7 @@
             };
 
             transactions.push(tx);
-            transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+            sortTransactions();
             localStorage.setItem('transactions', JSON.stringify(transactions));
 
             plan.paidInstallments = nextQuotaNum;
@@ -784,7 +793,7 @@
             };
 
             transactions.push(transaction);
-            transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+            sortTransactions();
             localStorage.setItem('transactions', JSON.stringify(transactions));
 
             bill.isPaid = true;
@@ -933,6 +942,7 @@
             const startDate = document.getElementById('export-start-date').value;
             const endDate = document.getElementById('export-end-date').value;
 
+            sortTransactions();
             let filtered = transactions;
             if (startDate) filtered = filtered.filter(t => t.date >= startDate);
             if (endDate) filtered = filtered.filter(t => t.date <= endDate);
@@ -1076,6 +1086,7 @@
         }
 
         function updateUI() {
+            sortTransactions();
             list.innerHTML = '';
             summaryHead.innerHTML = '';
             summaryBody.innerHTML = '';
